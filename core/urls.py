@@ -19,8 +19,8 @@ from django.urls import path, include
 from web_project.views import SystemView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('auth/', include('app.authentication.urls')),  # Rutas de login y register
+    path("admin/", admin.site.urls),
+    path("", include('app.authentication.urls')),
     path("", include("app.dashboards.urls")),
     path("", include("app.pages.urls")),
     path("", include("app.layouts.urls")),

@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="{% static  'vendor/css/pages/page-auth.css' %}">
 {% endblock page_css %}
 
-
 {% block content %}
 <div class="position-relative">
   <div class="authentication-wrapper authentication-basic container-p-y">
@@ -30,7 +29,7 @@
           <h4 class="mb-1">Adventure starts here 🚀</h4>
           <p class="mb-5">Make your app management easy and fun!</p>
 
-          <form id="formAuthentication" class="mb-5" action="{% url 'index' %}">
+          <form id="registerForm" class="mb-5">
            {% csrf_token %}
             <div class="form-floating form-floating-outline mb-5">
               <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" autofocus>
@@ -43,22 +42,25 @@
             <div class="mb-5 form-password-toggle">
               <div class="input-group input-group-merge">
                 <div class="form-floating form-floating-outline">
-                  <input type="password" id="password" class="form-control" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" />
+                  <input type="password" id="password" class="form-control" name="password" placeholder="Password" aria-describedby="password" />
                   <label for="password">Password</label>
                 </div>
                 <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
               </div>
             </div>
-
-            <div class="mb-5 py-2">
-              <div class="form-check mb-0">
-                <input class="form-check-input" type="checkbox" id="terms-conditions" name="terms">
-                <label class="form-check-label" for="terms-conditions">
-                  I agree to
-                  <a href="javascript:void(0);">privacy policy & terms</a>
-                </label>
-              </div>
+            
+            <!-- Role Input -->
+            <div class="form-floating form-floating-outline mb-5">
+              <input type="text" class="form-control" id="role" name="role" placeholder="Enter your role">
+              <label for="role">Role</label>
             </div>
+            
+            <!-- Business Input -->
+            <div class="form-floating form-floating-outline mb-5">
+              <input type="number" class="form-control" id="business" name="business" placeholder="Business ID">
+              <label for="business">Business ID</label>
+            </div>
+
             <button class="btn btn-primary d-grid w-100 mb-5">
               Sign up
             </button>
@@ -73,11 +75,43 @@
         </div>
       </div>
       <!-- Register Card -->
-      <img src="{% static 'img/illustrations/tree-3.png' %}" alt="auth-tree" class="authentication-image-object-left d-none d-lg-block">
-      <img src="{% static 'img/illustrations/auth-basic-mask-light.png' %}" height="172" class="authentication-image d-none d-lg-block" alt="triangle-bg">
-      <img src="{% static 'img/illustrations/tree.png' %}" alt="auth-tree" class="authentication-image-object-right d-none d-lg-block">
     </div>
   </div>
 </div>
+
+<script>
+  document.getElementById('registerForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const formData = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role')?.value || null,
+        business: document.getElementById('business')?.value || null
+    };
+
+    const response = await fetch('http://127.0.0.1:8000/api/auth/register/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(formData)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        localStorage.setItem('access_token', data.access);
+        localStorage.setItem('refresh_token', data.refresh);
+        window.location.href = 'main.html';
+    } else {
+        alert("Error en el registro: " + JSON.stringify(data));
+    }
+  });
+</script>
 
 {% endblock content %}
