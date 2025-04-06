@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="{% static  'vendor/css/pages/page-auth.css' %}">
 {% endblock page_css %}
 
-
 {% block content %}
 <div class="position-relative">
   <div class="authentication-wrapper authentication-basic container-p-y">
@@ -31,17 +30,22 @@
           <h4 class="mb-1">Welcome to {% get_theme_variables 'template_name' %}! 👋🏻</h4>
           <p class="mb-5">Please sign-in to your account and start the adventure</p>
 
-          <form id="formAuthentication" class="mb-5" action="{% url 'index' %}">
+          <!-- Alert para mensajes de error -->
+          <div id="loginAlert" class="alert alert-danger mb-3" style="display: none;"></div>
+          <!-- Alert para mensajes de éxito -->
+          <div id="successAlert" class="alert alert-success mb-3" style="display: none;"></div>
+
+          <form id="loginForm" class="mb-5">
             {% csrf_token %}
             <div class="form-floating form-floating-outline mb-5">
-              <input type="text" class="form-control" id="email" name="email-username" placeholder="Enter your email or username" autofocus>
+              <input type="text" class="form-control" id="email" name="email" placeholder="Enter your email or username" autofocus>
               <label for="email">Email or Username</label>
             </div>
             <div class="mb-5">
               <div class="form-password-toggle">
                 <div class="input-group input-group-merge">
                   <div class="form-floating form-floating-outline">
-                    <input type="password" id="password" class="form-control" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" />
+                    <input type="password" id="password" class="form-control" name="password" placeholder="••••••••" aria-describedby="password" />
                     <label for="password">Password</label>
                   </div>
                   <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
@@ -60,7 +64,10 @@
               </a>
             </div>
             <div class="mb-5">
-              <button class="btn btn-primary d-grid w-100" type="submit">login</button>
+              <button class="btn btn-primary d-grid w-100" type="submit" id="loginButton">
+                <span class="spinner-border spinner-border-sm d-none me-2" id="loginSpinner" role="status" aria-hidden="true"></span>
+                Login
+              </button>
             </div>
           </form>
 
@@ -79,4 +86,125 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Función para manejar el login
+  async function login(username, password) {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        credentials: 'include', // Incluye cookies en la solicitud
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Guardar tokens
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh);
+        
+        // Mostrar mensaje de éxito
+        showSuccessMessage("Login exitoso! Redireccionando...");
+        
+        // Redireccionar después de un breve retraso
+        setTimeout(() => {
+          window.location.href = "{% url 'index' %}";
+        }, 1500);
+        
+        return true;
+      } else {
+        // Mostrar mensaje de error desde la respuesta del servidor
+        showErrorMessage(data.detail || "Error de autenticación");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error en la solicitud:", error);
+      showErrorMessage("Error de conexión. Por favor, intente nuevamente.");
+      return false;
+    }
+  }
+
+  // Función para mostrar mensaje de error
+  function showErrorMessage(message) {
+    const alertElement = document.getElementById("loginAlert");
+    alertElement.textContent = message;
+    alertElement.style.display = "block";
+    
+    // Ocultar después de 5 segundos
+    setTimeout(() => {
+      alertElement.style.display = "none";
+    }, 5000);
+  }
+  
+  // Función para mostrar mensaje de éxito
+  function showSuccessMessage(message) {
+    const alertElement = document.getElementById("successAlert");
+    alertElement.textContent = message;
+    alertElement.style.display = "block";
+  }
+  
+  // Función para alternar la visibilidad de la contraseña
+  function setupPasswordToggle() {
+    const toggleButton = document.querySelector('.form-password-toggle .input-group-text');
+    if (toggleButton) {
+      toggleButton.addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = this.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          eyeIcon.className = 'ri-eye-line ri-20px';
+        } else {
+          passwordInput.type = 'password';
+          eyeIcon.className = 'ri-eye-off-line ri-20px';
+        }
+      });
+    }
+  }
+
+  // Inicializar cuando el DOM esté listo
+  document.addEventListener("DOMContentLoaded", function() {
+    const loginForm = document.getElementById("loginForm");
+    const loginButton = document.getElementById("loginButton");
+    const loginSpinner = document.getElementById("loginSpinner");
+    
+    // Configurar el toggle de contraseña
+    setupPasswordToggle();
+    
+    // Manejar el envío del formulario
+    loginForm.addEventListener("submit", async function(event) {
+      event.preventDefault(); // Prevenir envío tradicional del formulario
+      
+      // Mostrar spinner y deshabilitar botón
+      loginButton.disabled = true;
+      loginSpinner.classList.remove("d-none");
+      
+      const username = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      
+      // Validación básica
+      if (!username || !password) {
+        showErrorMessage("Por favor, complete todos los campos");
+        loginButton.disabled = false;
+        loginSpinner.classList.add("d-none");
+        return;
+      }
+      
+      // Intentar login
+      const success = await login(username, password);
+      
+      // Si no fue exitoso, reactivar el botón
+      if (!success) {
+        loginButton.disabled = false;
+        loginSpinner.classList.add("d-none");
+      }
+    });
+  });
+</script>
+
 {% endblock content %}

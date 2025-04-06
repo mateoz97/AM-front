@@ -50,16 +50,16 @@
             </div>
             
             <!-- Role Input -->
-            <div class="form-floating form-floating-outline mb-5">
+            <!-- <div class="form-floating form-floating-outline mb-5">
               <input type="text" class="form-control" id="role" name="role" placeholder="Enter your role">
               <label for="role">Role</label>
             </div>
-            
+             -->
             <!-- Business Input -->
-            <div class="form-floating form-floating-outline mb-5">
+            <!-- <div class="form-floating form-floating-outline mb-5">
               <input type="number" class="form-control" id="business" name="business" placeholder="Business ID">
               <label for="business">Business ID</label>
-            </div>
+            </div> -->
 
             <button class="btn btn-primary d-grid w-100 mb-5">
               Sign up
@@ -107,7 +107,7 @@
     if (response.ok) {
         localStorage.setItem('access_token', data.access);
         localStorage.setItem('refresh_token', data.refresh);
-        window.location.href = 'main.html';
+        window.location.href = 'index';
     } else {
         alert("Error en el registro: " + JSON.stringify(data));
     }
